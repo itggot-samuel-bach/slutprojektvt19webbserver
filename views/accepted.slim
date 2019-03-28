@@ -1,0 +1,21 @@
+div class="login_area"
+    div class="welcome_text"
+        a href="/"
+            h1 Welcome to the Blog
+        div class="login_box"
+            - if session.key?("username")
+                a href="/profile/#{session['username']}"
+                    input type="button" value="PRoFilE"
+            - else
+                form action="/login" method="POST"
+                    input name="username" placeholder="Username" type="text"
+                    input name="password" placeholder="Password" type="password"
+                    input value="Login!" type="submit"
+                form action="/create" method="POST"
+                    input name="usernameC" placeholder="Username" type="text"
+                    input name="passwordC" placeholder="Password" type="password"
+                    input value="Create Account" type="Submit"
+                
+        div class="info_feed"
+            h1 You have been sucessfully logged in
+
