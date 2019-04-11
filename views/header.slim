@@ -1,0 +1,21 @@
+header
+    div class="welcome_text"
+        a href="/"
+            h1 Welcome to the Blog
+    div class="login_box"
+        - if session.key?("user_id")
+            a href="/profile/#{session['user_id']}"
+                input type="button" value="PRoFilE"
+            a href="/profile/#{session['user_id']}/edit"
+                input type="button" value="ProFilE_eDItE=)"
+            form action="/logout" method="POST"
+                input value="Logout" type="Submit"
+        - else
+            form action="/login" method="POST"
+                input name="username" placeholder="Username" type="text"
+                input name="password" placeholder="Password" type="password"
+                input value="Login!" type="submit"
+            form action="/create" method="POST"
+                input name="usernameC" placeholder="Username" type="text"
+                input name="passwordC" placeholder="Password" type="password"
+                input value="Create Account" type="Submit"

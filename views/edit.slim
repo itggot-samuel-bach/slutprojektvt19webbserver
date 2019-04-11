@@ -1,18 +1,6 @@
-div class="login_area"
-    div class="welcome_text"
-        a href="/"
-            h1 Welcome to the Blog
-        div class="login_box"
-            form action="/edit_post" method="POST" id="formula" enctype="multipart/form-data"
-                label for="content" Message:
-                input type="hidden" name="post_id" value=id
-                textarea name="content" cols="30" rows="3" id="content"
-                label for="image" Image (optional):
-                input type="file" name="image" accept="image/png, image/jpeg, image/gif" id="image"
-                button type="submit" Send   
-        form action="/logout" method="POST"
-            input value="Logout" type="Submit"
-        div class="info_feed"
-
-
-
+.post-box
+    form action="/edit_post/#{id}" method="POST" id="formula" enctype="multipart/form-data"
+        label for="content" Message:
+        textarea name="content" cols="30" rows="3" id="content"
+        label for="image" Image (optional):
+        input type="file" name="image" accept="image/png, image/jpeg, image/gif" id="image"

@@ -32,8 +32,7 @@ post('/login') do
         redirect('/denied')
     end  
     if BCrypt::Password.new(result[0]["password"]) == params["password"]
-        session["user"] = result[0]['id']
-        session["username"] = params["username"]
+        session["user_id"] = result[0]['id']
         redirect('/accepted')
     else
         redirect('/denied')
@@ -68,7 +67,7 @@ get('/profile/:id/edit') do
     
     result = db.execute('SELECT * FROM users WHERE username=?', session["username"])
 
-    if session["username"] == params["id"]
+    if session["user_id"] == params["id"]
         slim(:user_edit, locals:{user: result[0], session: session})
     else
         slim(:denied)
@@ -96,7 +95,7 @@ post('/post') do
     text = params["content"]
     db = SQLite3::Database.new('db/database.db')
 
-    username = db.execute("SELECT username FROM users WHERE id=?", [session["user"]])
+    username = db.execute("SELECT username FROM users WHERE id=?", [session["user_id"]])
 
     new_file_name = SecureRandom.uuid
     temp_file = params["image"]["tempfile"]
@@ -123,7 +122,7 @@ get('/edit/:id') do
     slim(:edit, locals:{id: params["id"]})
 end
 
-post('/edit_post') do
+post('/edit_post/:id') do
     text = params["content"]
     post_ident = params["post_id"]
     db = SQLite3::Database.new('db/database.db')
@@ -135,7 +134,7 @@ post('/edit_post') do
     
     new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
 
-    db.execute('REPLACE INTO posts (id, content, picture, userId) VALUES (?, ?, ?, ?)', [post_ident, text, new_file_name, session["username"]])
+    db.execute('REPLACE INTO posts (id, content, picture, userId) VALUES (?, ?, ?, ?)', [post_ident, text, new_file_name, session["user_id"]])
    
     redirect('/')
 

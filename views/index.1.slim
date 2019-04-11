@@ -1,0 +1,45 @@
+div class="login_area"
+    div class="welcome_text"
+        a href="/"
+            h1 Welcome to the Blog
+        div class="login_box"
+            - if session.key?("username")
+                a href="/profile/#{session['username']}"
+                    input type="button" value="PRoFilE"
+                a href="/profile/#{session['username']}/edit"
+                    input type="button" value="ProFilE_eDItE=)"
+                form action="/logout" method="POST"
+                    input value="Logout" type="Submit"
+            - else
+                form action="/login" method="POST"
+                    input name="username" placeholder="Username" type="text"
+                    input name="password" placeholder="Password" type="password"
+                    input value="Login!" type="submit"
+                form action="/create" method="POST"
+                    input name="usernameC" placeholder="Username" type="text"
+                    input name="passwordC" placeholder="Password" type="password"
+                    input value="Create Account" type="Submit"
+                
+        div class="info_feed"
+            - if defined? posts
+
+                - posts.each do |post|
+                    article
+                        - if post["picture"] != nil
+                            .pic 
+                                img src="./img/#{post["picture"]}" alt="pic"
+                        .content
+                            p = post["content"]
+                        .author
+                            h1 = "Author"
+                            a href="profile/#{post['userId']}"
+                                p = post["userId"]
+                       
+                        - if session["username"] == post["userId"]
+                            form action="/delete" method="POST"
+                                input value="Delete Post" type="submit"
+                                input type="hidden" name="post_id" value="#{post["id"]}"
+                            form action="/edit/#{post["id"]}" method="GET"
+                                input value="Edit Post" type="submit"
+                        
+

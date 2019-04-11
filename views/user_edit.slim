@@ -1,18 +1,9 @@
-div class="login_area"
-    div class="welcome_text"
-        a href="/"
-            h1 Welcome to the Blog
-        div class="login_box"
-            form action="/profile/#{user['username']}/edit" method="POST" id="formula" enctype="multipart/form-data"
-                input type="hidden" name="user_id" value=user["id"]
-                label for="username" Username:
-                input type="text" name="username" value=user["username"]
-                label for="password" Password:
-                input type="password" name="password" value=user["password"]
-                button type="submit" Send   
-        form action="/logout" method="POST"
-            input value="Logout" type="Submit"
-        div class="info_feed"
-
-
+.post-box
+    form action="/profile/#{user['user_id']}/edit" method="POST" id="formula" enctype="multipart/form-data"
+        input type="hidden" name="user_id" value=user["id"]
+        label for="username" Username:
+        input type="text" name="username" value=user["username"]
+        label for="password" Password:
+        input type="password" name="password" value=user["password"]
+        button type="submit" Send
 

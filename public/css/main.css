@@ -3,7 +3,7 @@ body {
     height: 90vh;
 }
 
-.login_area {
+header {
     width: 99vw;
     height: 20vh;
     background-color: orange;
