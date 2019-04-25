@@ -5,9 +5,11 @@ br
             form action="/post" method="POST" id="formula" enctype="multipart/form-data"
                 label for="content" Message:
                 textarea name="content" cols="30" rows="3" id="content"
+                label for="content" tag:
+                textarea name="tag" cols="30" rows="3" id="tag"
                 label for="image" Image (optional):
                 input type="file" name="image" accept="image/png, image/jpeg, image/gif" id="image"
-                button type="submit" Send   
+                button type="submit" Send
 div class="info_feed"
     br
     - if defined? posts

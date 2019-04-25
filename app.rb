@@ -26,9 +26,6 @@ get('/denied') do
     slim(:denied)
 end
 
-get('/tags/') do
-
-end
 
 get('/accepted') do
     slim(:accepted, locals:{session: session})
@@ -82,6 +79,15 @@ get('/profile/:id') do
 
 end
 
+get('/tags/:id/:name') do
+    db = SQLite3::Database.new('db/database.db')
+    db.results_as_hash = true
+
+    result = db.execute('SELECT * FROM posts WHERE tag=?', params["id"])
+
+    slim(:topics, locals:{posts: result})
+end
+
 get('/profile/:id/edit') do
 
     db = SQLite3::Database.new('db/database.db')
@@ -127,10 +133,12 @@ post('/post') do
     new_file_name = SecureRandom.uuid
     temp_file = params["image"]["tempfile"]
     path = File.path(temp_file)
-    
+    tag = params["tag"]
+    tag_id = db.execute("SELECT id FROM tags WHERE name=?", tag)[0]
+
     new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
 
-    db.execute('INSERT INTO posts (content, picture, userId) VALUES (?, ?, ?)', [text, new_file_name, username])
+    db.execute('INSERT INTO posts (content, picture, userId, tag, author) VALUES (?, ?, ?, ?, ?)', [text, new_file_name, session['user_id'], tag_id, username])
 
     redirect('/')
 

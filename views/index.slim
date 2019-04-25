@@ -4,7 +4,7 @@ div class="info_feed"
             article
                 - if post["picture"] != nil
                     .pic 
-                        img src="./img/#{post["picture"]}" alt="pic"
+                        img src="/img/#{post["picture"]}" alt="pic"
                 .content
                     p = post["content"]
                 .author
