@@ -6,6 +6,13 @@ require 'securerandom'
 
 enable :sessions
 
+before() do
+    db = SQLite3::Database.new('db/database.db')
+    db.results_as_hash = true
+    
+    @categories = db.execute('SELECT * FROM tags')
+end
+
 get('/') do
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
@@ -17,6 +24,10 @@ end
 
 get('/denied') do
     slim(:denied)
+end
+
+get('/tags/') do
+
 end
 
 get('/accepted') do
@@ -43,9 +54,19 @@ post('/create') do
     #Ansluta till db
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
-    hashed_password = BCrypt::Password.create(params["passwordC"])
-    db.execute("INSERT INTO users (username, password) VALUES (?, ?)", [params["usernameC"], hashed_password])
 
+    existing_user = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
+    
+    if existing_user.length > 0
+        redirect('/')
+    end
+
+    hashed_password = BCrypt::Password.create(params["password"])
+    db.execute("INSERT INTO users (username, password) VALUES (?, ?)", [params["username"], hashed_password])
+
+    user_id = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
+
+    session["user_id"] = user_id[0]["id"]
     redirect('/')
 end
 
@@ -55,8 +76,9 @@ get('/profile/:id') do
     db.results_as_hash = true
 
     result = db.execute('SELECT * FROM posts WHERE userId=?', params["id"])
+    user = db.execute('SELECT * FROM users WHERE id=?', params["id"])[0]
     
-    slim(:user, locals:{posts: result, session: session, user: params["id"]})
+    slim(:user, locals:{posts: result, session: session, user: user})
 
 end
 
@@ -65,9 +87,9 @@ get('/profile/:id/edit') do
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
     
-    result = db.execute('SELECT * FROM users WHERE username=?', session["username"])
+    result = db.execute('SELECT * FROM users WHERE id=?', session["user_id"])
 
-    if session["user_id"] == params["id"]
+    if session["user_id"] == params["id"].to_i
         slim(:user_edit, locals:{user: result[0], session: session})
     else
         slim(:denied)
@@ -78,12 +100,17 @@ end
 post('/profile/:id/edit') do 
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
+
+    existing_user = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
+    
+    if existing_user.length > 0
+        redirect('/')
+    end
+
     hashed_password = BCrypt::Password.create(params["password"])
-    db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["user_id"], params["username"], hashed_password])
+    db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"], params["username"], hashed_password])
 
     redirect('/')
-
-
 end
 
 post('/logout') do

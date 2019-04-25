@@ -1,9 +1,9 @@
+br
 .post-box
-    form action="/profile/#{user['user_id']}/edit" method="POST" id="formula" enctype="multipart/form-data"
-        input type="hidden" name="user_id" value=user["id"]
+    form action="/profile/#{user['userid']}/edit" method="POST" id="forumla" enctype="multipart/form-data"
         label for="username" Username:
         input type="text" name="username" value=user["username"]
         label for="password" Password:
-        input type="password" name="password" value=user["password"]
+        input type="password" name="password"
         button type="submit" Send
 

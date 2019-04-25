@@ -1,12 +1,15 @@
+br
 .post-box
-    form action="/post" method="POST" id="formula" enctype="multipart/form-data"
-        label for="content" Message:
-        textarea name="content" cols="30" rows="3" id="content"
-        label for="image" Image (optional):
-        input type="file" name="image" accept="image/png, image/jpeg, image/gif" id="image"
-        button type="submit" Send   
+    - if session.key?("user_id")
+        - if session["user_id"] == user["id"]
+            form action="/post" method="POST" id="formula" enctype="multipart/form-data"
+                label for="content" Message:
+                textarea name="content" cols="30" rows="3" id="content"
+                label for="image" Image (optional):
+                input type="file" name="image" accept="image/png, image/jpeg, image/gif" id="image"
+                button type="submit" Send   
 div class="info_feed"
-    h1=user
+    br
     - if defined? posts
 
         - posts.each do |post|
@@ -18,7 +21,7 @@ div class="info_feed"
                     p = post["content"]
                 .author
                     h1 = "Author"
-                    p = post["userId"]
+                    p = post["author"]
                 
                 - if session["user_id"] == post["userId"]
                     form action="/delete" method="POST"

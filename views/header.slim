@@ -14,8 +14,9 @@ header
             form action="/login" method="POST"
                 input name="username" placeholder="Username" type="text"
                 input name="password" placeholder="Password" type="password"
-                input value="Login!" type="submit"
-            form action="/create" method="POST"
-                input name="usernameC" placeholder="Username" type="text"
-                input name="passwordC" placeholder="Password" type="password"
-                input value="Create Account" type="Submit"
+                input value="Login!" type="Submit"
+                input value="Create Account" type="Submit" formaction="/create"
+
+    div class="topics"
+        - @categories.each do |category|
+            a href="/tags/#{category['id']}/#{category['name']}" = category["name"]
