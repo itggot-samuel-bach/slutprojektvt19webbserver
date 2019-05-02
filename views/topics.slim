@@ -17,5 +17,5 @@
             form action="/edit/#{post["id"]}" method="GET"
                 input value="Edit Post" type="submit"
 
-        - if session["user_id"] != nil
-            form action="/comment"
+            form action="/comments/#{post['id']}" method="GET" id="formula" enctype="multipart/form-data"
+                button type="submit" Comments

@@ -4,6 +4,8 @@ require "sqlite3"
 require "bcrypt"
 require 'securerandom'
 
+require_relative 'functions/functions'
+
 enable :sessions
 
 before() do
@@ -49,21 +51,7 @@ end
 
 post('/create') do
     #Ansluta till db
-    db = SQLite3::Database.new('db/database.db')
-    db.results_as_hash = true
-
-    existing_user = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
-    
-    if existing_user.length > 0
-        redirect('/')
-    end
-
-    hashed_password = BCrypt::Password.create(params["password"])
-    db.execute("INSERT INTO users (username, password) VALUES (?, ?)", [params["username"], hashed_password])
-
-    user_id = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
-
-    session["user_id"] = user_id[0]["id"]
+    session["user_id"] = create(params)
     redirect('/')
 end
 
@@ -96,7 +84,7 @@ get('/profile/:id/edit') do
     result = db.execute('SELECT * FROM users WHERE id=?', session["user_id"])
 
     if session["user_id"] == params["id"].to_i
-        slim(:user_edit, locals:{user: result[0], session: session})
+        slim(:user_edit, locals:{user: result[0]})
     else
         slim(:denied)
     end
@@ -106,12 +94,6 @@ end
 post('/profile/:id/edit') do 
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
-
-    existing_user = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
-    
-    if existing_user.length > 0
-        redirect('/')
-    end
 
     hashed_password = BCrypt::Password.create(params["password"])
     db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"], params["username"], hashed_password])
@@ -125,20 +107,7 @@ post('/logout') do
 end
 
 post('/post') do
-    text = params["content"]
-    db = SQLite3::Database.new('db/database.db')
-
-    username = db.execute("SELECT username FROM users WHERE id=?", [session["user_id"]])
-
-    new_file_name = SecureRandom.uuid
-    temp_file = params["image"]["tempfile"]
-    path = File.path(temp_file)
-    tag = params["tag"]
-    tag_id = db.execute("SELECT id FROM tags WHERE name=?", tag)[0]
-
-    new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
-
-    db.execute('INSERT INTO posts (content, picture, userId, tag, author) VALUES (?, ?, ?, ?, ?)', [text, new_file_name, session['user_id'], tag_id, username])
+    post(params, session)
 
     redirect('/')
 
@@ -153,24 +122,31 @@ post('/delete') do
     redirect('/')
 end
 
-get('/edit/:id') do
-    slim(:edit, locals:{id: params["id"]})
-end
+# get('/edit/:id') do
+#     slim(:edit, locals:{id: params["id"]})
+# end
 
 post('/edit_post/:id') do
-    text = params["content"]
-    post_ident = params["post_id"]
+    id = params["post_id"]
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
+   
+    if params.key?("image") and params["image"]
+        temp_file = params["image"]["tempfile"]
+        new_file_name = SecureRandom.uuid
+        path = File.path(temp_file)
+        new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
+        db.execute("UPDATE posts SET picture=? WHERE id=?", new_file_name, id)
+    end
     
-    new_file_name = SecureRandom.uuid
-    temp_file = params["image"]["tempfile"]
-    path = File.path(temp_file)
-    
-    new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
-
-    db.execute('REPLACE INTO posts (id, content, picture, userId) VALUES (?, ?, ?, ?)', [post_ident, text, new_file_name, session["user_id"]])
+    if params.key?("content") and params["content"].length > 1
+        db.execute("UPDATE posts SET content=? WHERE id=?", [params["content"], id])
+    end
    
     redirect('/')
 
+end
+
+get('/comments/:id') do 
+    slim(:topics_comments)
 end
