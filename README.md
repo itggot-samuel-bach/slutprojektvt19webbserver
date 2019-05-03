@@ -14,7 +14,15 @@ Projeket skall bestå av ett forum som ska uppfylla flera olika funktioner. Man 
 
 ## 3. Funktionalitet (med sekvensdiagram)
 1) Registering
+![alttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/register_sequence.PNG)
 2) inlogg samt utloggning
-3) Redigera inlägg och användarprofiler.
+![alttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/login_sequence.PNG)
+3) Posta inlägg
+![alttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/profile_post_sequence.PNG)
+4) Redigera inlägg och användarprofiler.
 ## 4. Arkitektur (Beskriv filer och mappar)
+Min arkitektur består av ett flertal mappar. Dessa är: db (database.db i), functions (functions rb i), public (css och img i den), resources (med bilder), views (med alla slim filer i) och sedan app.rb som står själv. Här följer en bild som visar mappstrukturen.
+![alttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/arkitektur.PNG)
 ## 5. (Databas med ER-diagram)
+Det här är min databas illustrerat med ett er-diagram:
+![allttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/er-diagram.PNG)
