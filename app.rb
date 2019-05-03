@@ -9,7 +9,7 @@ require_relative 'functions/functions'
 enable :sessions
 
 before() do
-    start(@categories)
+    @categories = start()
 end
 
 get('/') do
@@ -40,10 +40,7 @@ post('/create') do
 end
 
 get('/profile/:id') do
-    array_values = profile(params)
-    result = array_values[0]
-    user = array_values[1]
-    my_tags = array_values[2]
+    result,user,my_tags = profile(params)
     slim(:user, locals:{posts: result, session: session, tags: my_tags, user: user})
 end
 
@@ -90,8 +87,4 @@ end
 post('/edit_post/:id') do
     edit_post(params)
     redirect('/')
-end
-
-get('/comments/:id') do 
-    slim(:topics_comments)
 end

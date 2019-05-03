@@ -6,9 +6,7 @@ br
                 label for="content" Message:
                 textarea name="content" cols="30" rows="3" id="content"
                 label for="tags" Select Tags
-                - if defined? tags 
-                    - tags.each do |tag|    
-                        input type="checkbox" name="tags" value="#{tag['name']}" = tag['name']         
+                input type="text" name="tags"
                 br
                 label for="image" Image (optional):
                 input type="file" name="image" accept="image/png, image/jpeg, image/gif" id="image"

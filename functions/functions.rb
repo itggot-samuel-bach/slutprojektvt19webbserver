@@ -3,36 +3,47 @@ def post(params, session)
     db = SQLite3::Database.new('db/database.db')
     username = db.execute("SELECT username FROM users WHERE id=?", [session["user_id"]])
     new_file_name = SecureRandom.uuid
+    
     temp_file = params["image"]["tempfile"]
     path = File.path(temp_file)
-    tag = params["tag"]
-    tag_id = db.execute("SELECT id FROM tags WHERE name=?", tag)[0]
+    tag = params["tags"]
     new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
-    db.execute('INSERT INTO posts (content, picture, userId, tag, author) VALUES (?, ?, ?, ?, ?)', [text, new_file_name, session['user_id'], tag_id, username])
+
+    db.execute('INSERT INTO posts (content, picture, userId, author) VALUES (?, ?, ?, ?)', [text, new_file_name, session['user_id'], username])
+    post_id = db.execute("SELECT last_insert_rowid()")[0][0]
+    
+    tag.split(" ").each do |tags|
+        tagId = db.execute('SELECT id FROM tags where NAME=?', tags)[0][0]
+        db.execute('INSERT INTO posts_tags (tagId, postId) VALUES (?, ?)', tagId, post_id)
+    end
 end
 
 def create(params)
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
     existing_user = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
+    
     if existing_user.length > 0
         redirect('/')
     end
+    
     hashed_password = BCrypt::Password.create(params["password"])
     db.execute("INSERT INTO users (username, password) VALUES (?, ?)", [params["username"], hashed_password])
     user_id = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
+    
     return user_id[0]["id"]
 end
 
-def start(categories)
-db = SQLite3::Database.new('db/database.db')
-db.results_as_hash = true
-@categories = db.execute('SELECT * FROM tags')
+def start()
+    db = SQLite3::Database.new('db/database.db')
+    db.results_as_hash = true
+    db.execute('SELECT * FROM tags')
 end
 
 def home()
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
+    
     result = db.execute('SELECT * FROM posts')
     return result
 end
@@ -55,16 +66,17 @@ end
 def profile(params)
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
+    
     result = db.execute('SELECT * FROM posts WHERE userId=?', params["id"])
     user = db.execute('SELECT * FROM users WHERE id=?', params["id"])[0]
-    my_tags = db.execute('SELECT * FROM tags')
-    return result, user, my_tags
+    
+    return result, user
 end
 
 def tags(params)
     db = SQLite3::Database.new('db/database.db')
     db.results_as_hash = true
-    result = db.execute('SELECT * FROM posts WHERE tag=?', params["id"])
+    result = db.execute('SELECT posts.* FROM tags INNER JOIN posts_tags ON posts_tags.tagId = tags.id INNER JOIN posts ON posts.id = posts_tags.postId WHERE tags.id=?', params["id"])
     return result
 end
 
