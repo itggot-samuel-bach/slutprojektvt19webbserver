@@ -12,11 +12,16 @@ header
                 input value="Logout" type="Submit"
         - else
             form action="/login" method="POST"
-                input name="username" placeholder="Username" type="text"
-                input name="password" placeholder="Password" type="password"
+                / - if session[:error]
+                /     div.error = error
+                input name="username" placeholder="Username" type="text" required=true
+                input name="password" placeholder="Password" type="password" required=true
                 input value="Login!" type="Submit"
                 input value="Create Account" type="Submit" formaction="/create"
 
     div class="topics"
+        select name="cat"
+            - @categories.each do |category|
+                option value="#{category["id"]}" = category["name"]
         - @categories.each do |category|
             a href="/tags/#{category['id']}/#{category['name']}" = category["name"]

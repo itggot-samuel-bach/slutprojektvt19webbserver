@@ -1,4 +1,4 @@
-def post(params, session)
+def post(params, user_id)
     text = params["content"]
     db = SQLite3::Database.new('db/database.db')
     username = db.execute("SELECT username FROM users WHERE id=?", [session["user_id"]])
@@ -9,7 +9,7 @@ def post(params, session)
     tag = params["tags"]
     new_file = FileUtils.copy(path, "./public/img/#{new_file_name}")
 
-    db.execute('INSERT INTO posts (content, picture, userId, author) VALUES (?, ?, ?, ?)', [text, new_file_name, session['user_id'], username])
+    db.execute('INSERT INTO posts (content, picture, userId, author) VALUES (?, ?, ?, ?)', [text, new_file_name, user_id, username])
     post_id = db.execute("SELECT last_insert_rowid()")[0][0]
     
     tag.split(" ").each do |tags|
