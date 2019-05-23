@@ -3,24 +3,43 @@ require "slim"
 require "sqlite3"
 require "bcrypt"
 require 'securerandom'
-require 'byebug'
 require_relative 'functions/functions'
+include Model
 
 enable :sessions
 
 configure do
-    set :unsecured_paths, ['/create, /profile/:id/edit, /edit/:id, /edit_post/:id']
+    set :unsecured_profile_paths, ["/profile/:id/edit"]
+    set :unsecured_post_paths, ["/edit/:id", "/edit_post/:id", "/delete"]
 end
 
-#Loads all tags
+
+set(:auth) do |*params|
+    condition do
+        settings.unsecured_profile_paths.each do |unsecured|
+            if unsecured == request.path
+                if session["id"] != params['id'].to_i
+                    session[:user_errir] = "You are not this user, stay away!"
+                    return false
+                end
+            end
+        end
+        settings.unsecured_post_paths.each do |unsecured|
+            if unsecured == request.path
+                owner = post_owner(params)
+                if session["id"] != owner
+                    session[:post_error] = "You are not the owner of this post!"
+                    return false
+                end
+            end
+        end
+    return true
+    end
+end
+
+#Loads all tags 
 #
 before() do
-    request.path
-    - unsecured_paths.each do |unsecured|
-        if unsecured = request.path 
-            if session["id"] == 
-        end
-    end
     @categories = start()
 end
 
@@ -47,13 +66,13 @@ end
 #
 # @param [String] username, The Username
 # @param [String] password, the Password
-# @see Functions#Login
+# @see Model#Login
 post('/login') do
-    state = login(params, session)
-    if state == true
+    state = login(params)
+    if state
+        session["user_id"] = state 
         redirect('/accepted')
     else
-
         redirect('/')
     end
 end 
@@ -63,7 +82,7 @@ end
 # @param [String] username, The Username
 # @param [String] password, The Password
 #
-# @see Functions#Create
+# @see Model#Create
 post('/create') do
     session["user_id"] = create(params)
     redirect('/')
@@ -89,8 +108,8 @@ end
 #
 # @param [integer] id, user's id
 #
-# @see Functions#GetProfileEdit
-get('/profile/:id/edit') do
+# @see Model#GetProfileEdit
+get('/profile/:id/edit', auth: true) do
 
     result = get_profile_edit(session)
 
@@ -107,8 +126,8 @@ end
 # @param [string] username, The Username
 # @param [string] password, The Password
 #
-# @see Functions#PostProfileEdit
-post('/profile/:id/edit') do 
+# @see Model#PostProfileEdit
+post('/profile/:id/edit', auth: true ) do 
     result = post_profile_edit(params)
     if result[:error]
         session[:error] = result[:message]
@@ -128,16 +147,18 @@ end
 #
 # @param []
 post('/post') do
+    if session["user_id"]
     post(params, session['user_id'])
+    end 
     redirect('/')
 end
 
-post('/delete') do
+post('/delete', auth: true) do
     delete(params)
     redirect('/')
 end
 
- get('/edit/:id') do
+ get('/edit/:id', auth: true) do
      slim(:edit, locals:{id: params["id"]})
  end
 
@@ -147,7 +168,7 @@ end
  # @param [Integer] :id, Description.
  # 
  # @see Model#Function
-post('/edit_post/:id') do
+post('/edit_post/:id', auth: true) do
     edit_post(params)
     redirect('/')
 end
