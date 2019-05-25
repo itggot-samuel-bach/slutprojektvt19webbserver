@@ -19,7 +19,7 @@ set(:auth) do |*params|
         settings.unsecured_profile_paths.each do |unsecured|
             if unsecured == request.path
                 if session["id"] != params['id'].to_i
-                    session[:user_errir] = "You are not this user, stay away!"
+                    session[:error] = "You are not this user, stay away!"
                     return false
                 end
             end
@@ -28,7 +28,7 @@ set(:auth) do |*params|
             if unsecured == request.path
                 owner = post_owner(params)
                 if session["id"] != owner
-                    session[:post_error] = "You are not the owner of this post!"
+                    session[:error] = "You are not the owner of this post!"
                     return false
                 end
             end
@@ -69,10 +69,12 @@ end
 # @see Model#Login
 post('/login') do
     state = login(params)
-    if state
-        session["user_id"] = state 
+    if state.key?(:user_id)
+        session[:error] = ""
+        session["user_id"] = state[:user_id] 
         redirect('/accepted')
     else
+        session[:error] = state[:error]
         redirect('/')
     end
 end 
@@ -84,15 +86,28 @@ end
 #
 # @see Model#Create
 post('/create') do
-    session["user_id"] = create(params)
-    redirect('/')
+    state = create(params)
+    if state.key?(:user_id)
+        session[:error] = ""
+        session["user_id"] = state
+        redirect('/')
+    else
+        session[:error] = state[:error]
+        redirect('/')
+    end
 end
 
 #Loads the profile page
 #
 get('/profile/:id') do
-    result,user,my_tags = profile(params)
-    slim(:user, locals:{posts: result, session: session, tags: my_tags, user: user})
+    result = profile(params)    
+    if result.key?(:user)
+        session[:error] = ""
+        slim(:user, locals:{posts: result[:posts], session: session, user: result[:user]})
+    else
+        session[:error] = result[:error]
+        redirect('/denied')
+    end
 end
 
 #Loads the specific tags page and displays it with an id and name of the tag
@@ -130,7 +145,7 @@ end
 post('/profile/:id/edit', auth: true ) do 
     result = post_profile_edit(params)
     if result[:error]
-        session[:error] = result[:message]
+        session[:error] = result[:error]
     else
         redirect('/')
     end
@@ -148,7 +163,10 @@ end
 # @param []
 post('/post') do
     if session["user_id"]
-    post(params, session['user_id'])
+        state = post(params, session['user_id'])
+        if state.key?(:error)
+            session[:error] = state[:error]
+        end
     end 
     redirect('/')
 end

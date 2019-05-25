@@ -2,7 +2,7 @@ module Model
     def post(params, user_id)
         if validate_create_post(params)
             text = params["content"]
-            db = SQLite3::Database.new('db/database.db')
+            db = connect_to_db()
             username = db.execute("SELECT username FROM users WHERE id=?", [session["user_id"]])
             new_file_name = SecureRandom.uuid
             
@@ -20,121 +20,123 @@ module Model
                     db.execute('INSERT INTO posts_tags (tagId, postId) VALUES (?, ?)', tagId[0][0], post_id)
                 end
             end
+            return {}
         else
-            return false
+            return {error: "Your message is either too long or you are missing a message or an image"}
         end
     end
 
     def create(params)
         if validate_create_user(params)
-            db = SQLite3::Database.new('db/database.db')
+            db = connect_to_db()
             db.results_as_hash = true
             existing_user = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
             
             if existing_user.length > 0
-                return false
+                return {error: "There is already a user with this name!"}
             end
             
             hashed_password = BCrypt::Password.create(params["password"])
             db.execute("INSERT INTO users (username, password) VALUES (?, ?)", [params["username"], hashed_password])
             user_id = db.execute("SELECT id FROM users WHERE username=?", [params["username"]])
-            return user_id[0]["id"]
+            return {user_id: result[0]['id']}
         else
-            return false
+            return {error: "Your username or password is too long."}
         end
     end
 
     def start()
-        db = SQLite3::Database.new('db/database.db')
+        db = connect_to_db()
         db.results_as_hash = true
         db.execute('SELECT * FROM tags')
     end
 
     def home()
-        db = SQLite3::Database.new('db/database.db')
+        db = connect_to_db()
         db.results_as_hash = true
         
-        result = db.execute('SELECT * FROM posts')
+        result = db.execute('SELECT * FROM posts ORDER BY id DESC')
         return result
     end
 
     def login(params)
         if validate_login_user(params)
-            db = SQLite3::Database.new('db/database.db')
+            db = connect_to_db()
             db.results_as_hash = true
             result = db.execute("SELECT id, password FROM users WHERE username=?", [params["username"]])
             if result.length == 0
-                return false
+                return {error: "Check your input again"}
             end  
             if BCrypt::Password.new(result[0]["password"]) == params["password"]
-                return result[0]['id']
+                return {user_id: result[0]['id']}
             else
-                return false
+                return {error: "You have not provided the correct credentials!"}
             end
         else
-            return false
+            return {error: "Not valid input"}
         end
     end
 
+
     def profile(params)
-        if validate_profile_and_tags(params)
-            db = SQLite3::Database.new('db/database.db')
+        if validate_profile(params)
+            db = connect_to_db()
             db.results_as_hash = true
             
             result = db.execute('SELECT * FROM posts WHERE userId=?', params["id"])
             user = db.execute('SELECT * FROM users WHERE id=?', params["id"])[0]
             
-            return result, user
+            return {posts: result, user: user}
         else
-            return false
+            return {error: "There is no such user!"}
         end
     end
 
     def tags(params)
-        if validate_profile_and_tags(params)
+        if validate_tags(params)
             db = connect_to_db()
             db.results_as_hash = true
             result = db.execute('SELECT posts.* FROM tags INNER JOIN posts_tags ON posts_tags.tagId = tags.id INNER JOIN posts ON posts.id = posts_tags.postId WHERE tags.id=?', params["id"])
             return result
         else
-            return false
+            return {error: "There is no such tag!"}
         end
     end
 
     def get_profile_edit(user_id)
-        if validate_profile_edit(user_id)
+        if validate_profile_edit_get(user_id)
             db = connect_to_db()
             db.results_as_hash = true
             result = db.execute('SELECT * FROM users WHERE id=?', session["user_id"])
             return result
         else
-            return false
+            return {error: "You are not logged in"}
         end
     end
 
     def post_profile_edit(params)
-        if params["password"] and params["id"] and params["username"] and params["password"] == params["password_2"]
+        if validate_profile_edit_post(params)
             db = connect_to_db()
             db.results_as_hash = true
             hashed_password = BCrypt::Password.create(params["password"])
             db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"], params["username"], hashed_password])
         else
-            return false
+            return {error: "You are not logged in"}
         end
     end
 
     def delete(params)
-        if params["id"]
+        if validate_delete(params)
             db = connect_to_db()
             db.results_as_hash = true
             db.execute("DELETE FROM posts WHERE id = ?", params["id"])
         else
-            return false
+            return {error: "There is no post which such an id!"}
         end
     end
 
     def edit_post(params)
-        if params["id"] and params["image"] and params["content"] 
+        if validate_edit_post(params) 
             id = params["id"]
             db = connect_to_db()
             db.results_as_hash = true
@@ -151,44 +153,73 @@ module Model
                 db.execute("UPDATE posts SET content=? WHERE id=?", [params["content"], id])
             end
         else
-            return false
+            return {error: "You have not selected an image or a message or this post does not exist!"}
         end
     end
 
     def post_owner(params)
-        if params["id"]
+        if validate_post_owner(params)
             db = connect_to_db()
             db.results_as_hash = true
             
             result = db.execute('SELECT userId FROM posts where id=?', params["id"].to_i)
             return result
         else
-            return false
+            return {error: "There is no post with such an id"}
         end
     end
 
     def connect_to_db()
-        db = SQLite3::Database.new('db/database.db')
+        SQLite3::Database.new('db/database.db')
     end
 
-    validate_create_post(params)
+    def validate_create_post(params)
         params["content"].length < 500 and params["tags"] and params["image"]
     end
 
-    validate_create_user(params)
-        params["username"].length < 25
+    def validate_create_user(params)
+        params["username"].length < 25 and params["password"].length < 25
     end
     
-    validate_login_user(params)
+    def validate_login_user(params)
         params["username"] and params["password"] and params["password"] == params["password_2"]
     end
 
-    validate_profile_and_tags(params)
+    def validate_profile(params)
+        db = connect_to_db()
+        db.results_as_hash = true
+
+        result = db.execute('SELECT id FROM users where id=?', params["id"].to_i)
+
+        if result
+            return true
+        else
+            return false
+        end
+    end
+
+    def validate_tags(params)
         params["id"]
     end
 
-    validate_profile_edit(user_id)
+    def validate_profile_edit_get(user_id)
         session["user_id"]
+    end
+
+    def validate_profile_edit_post(params)
+        params["password"] and params["id"] and params["username"]
+    end
+
+    def validate_delete(params)
+        params["id"]
+    end
+
+    def validate_edit_post(params)
+        params["id"] and params["image"] and params["content"] 
+    end
+
+    def validate_post_owner(params)
+        params["id"]
     end
 end
 

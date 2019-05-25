@@ -1,3 +1,8 @@
+-if session.key?(:error)
+    -if session[:error]
+        p = session[:error]
+
+
 div class="info_feed"
     - if defined? posts
         - posts.each do |post|
