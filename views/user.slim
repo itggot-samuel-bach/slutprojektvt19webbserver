@@ -31,7 +31,7 @@ div class="info_feed"
                 - if session["user_id"] == post["userId"]
                     form action="/delete" method="POST"
                         input value="Delete Post" type="submit"
-                        input type="hidden" name="post_id" value="#{post["id"]}"
+                        input type="hidden" name="id" value="#{post["id"]}"
                     form action="/edit/#{post["id"]}" method="GET"
                         input value="Edit Post" type="submit"
 

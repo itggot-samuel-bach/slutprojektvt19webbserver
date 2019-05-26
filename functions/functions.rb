@@ -1,4 +1,4 @@
-module Model
+##module Model
     def post(params, user_id)
         if validate_create_post(params)
             text = params["content"]
@@ -97,18 +97,18 @@ module Model
             db = connect_to_db()
             db.results_as_hash = true
             result = db.execute('SELECT posts.* FROM tags INNER JOIN posts_tags ON posts_tags.tagId = tags.id INNER JOIN posts ON posts.id = posts_tags.postId WHERE tags.id=?', params["id"])
-            return result
+            return {posts: result}
         else
             return {error: "There is no such tag!"}
         end
     end
 
-    def get_profile_edit(user_id)
-        if validate_profile_edit_get(user_id)
+    def get_profile_edit(session, params)
+        if validate_profile_edit_get(session, params)
             db = connect_to_db()
             db.results_as_hash = true
             result = db.execute('SELECT * FROM users WHERE id=?', session["user_id"])
-            return result
+            return {user: result}
         else
             return {error: "You are not logged in"}
         end
@@ -119,7 +119,7 @@ module Model
             db = connect_to_db()
             db.results_as_hash = true
             hashed_password = BCrypt::Password.create(params["password"])
-            db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"], params["username"], hashed_password])
+            result = db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"], params["username"], hashed_password])
         else
             return {error: "You are not logged in"}
         end
@@ -131,7 +131,7 @@ module Model
             db.results_as_hash = true
             db.execute("DELETE FROM posts WHERE id = ?", params["id"])
         else
-            return {error: "There is no post which such an id!"}
+            return {error: "You are not the owner of this post!"}
         end
     end
 
@@ -158,14 +158,14 @@ module Model
     end
 
     def post_owner(params)
-        if validate_post_owner(params)
+        if validate_post_owner(session)
             db = connect_to_db()
             db.results_as_hash = true
             
-            result = db.execute('SELECT userId FROM posts where id=?', params["id"].to_i)
+            result = db.execute('SELECT userId FROM posts where id=?', session["user_id"])
             return result
         else
-            return {error: "There is no post with such an id"}
+            return false
         end
     end
 
@@ -191,7 +191,7 @@ module Model
 
         result = db.execute('SELECT id FROM users where id=?', params["id"].to_i)
 
-        if result
+        if !result.empty?()
             return true
         else
             return false
@@ -199,11 +199,29 @@ module Model
     end
 
     def validate_tags(params)
-        params["id"]
+        db = connect_to_db()
+        db.results_as_hash = true
+
+        result = db.execute('SELECT id FROM tags where id=?', params["id"].to_i)
+
+        if !result.empty?()
+            return true
+        else
+            return false
+        end
     end
 
-    def validate_profile_edit_get(user_id)
-        session["user_id"]
+    def validate_profile_edit_get(session, params)
+        db = connect_to_db()
+        db.results_as_hash = true
+
+        result = db.execute('SELECT id FROM users where id=?', params["id"].to_i)
+
+        if result[0][0] == session["user_id"]
+            return true
+        else
+            return false
+        end
     end
 
     def validate_profile_edit_post(params)
@@ -211,15 +229,28 @@ module Model
     end
 
     def validate_delete(params)
-        params["id"]
+        db = connect_to_db()
+        db.results_as_hash = true
+
+        result = db.execute('SELECT userId FROM posts where id=?', params["id"].to_i)
+
+        if result[0][0] == session["user_id"]
+            return true
+        else
+            return false
+        end
     end
 
     def validate_edit_post(params)
         params["id"] and params["image"] and params["content"] 
     end
 
-    def validate_post_owner(params)
-        params["id"]
+    def validate_post_owner(session)
+        if session["user_id"]
+            return true
+        else
+            return false
+        end
     end
-end
+##end
 

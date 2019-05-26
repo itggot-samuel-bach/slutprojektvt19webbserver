@@ -4,7 +4,7 @@ require "sqlite3"
 require "bcrypt"
 require 'securerandom'
 require_relative 'functions/functions'
-include Model
+##include Model
 
 enable :sessions
 
@@ -26,7 +26,7 @@ set(:auth) do |*params|
         end
         settings.unsecured_post_paths.each do |unsecured|
             if unsecured == request.path
-                owner = post_owner(params)
+                owner = post_owner(session)
                 if session["id"] != owner
                     session[:error] = "You are not the owner of this post!"
                     return false
@@ -106,17 +106,22 @@ get('/profile/:id') do
         slim(:user, locals:{posts: result[:posts], session: session, user: result[:user]})
     else
         session[:error] = result[:error]
-        redirect('/denied')
+        redirect('/')
     end
 end
 
 #Loads the specific tags page and displays it with an id and name of the tag
 #
-# param [Integer] 
+# param [Integer]
 #
 get('/tags/:id/:name') do
     result = tags(params)
-    slim(:topics, locals:{posts: result})
+    if result.key?(:posts)
+        slim(:topics, locals:{posts: result[:posts]})
+    else
+        session[:error] = result[:error]
+        redirect('/')
+    end
 end
 
 #Edits the currently logged in user's credentials
@@ -126,12 +131,13 @@ end
 # @see Model#GetProfileEdit
 get('/profile/:id/edit', auth: true) do
 
-    result = get_profile_edit(session)
+    result = get_profile_edit(session, params)
 
-    if session["user_id"] == params["id"].to_i
-        slim(:user_edit, locals:{user: result[0]})
+    if result.key?(:user)
+        slim(:user_edit, locals:{user: result})
     else
-        slim(:denied)
+        session[:error] = result[:error]
+        redirect('/')
     end
 end
 
