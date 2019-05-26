@@ -25,4 +25,4 @@ Min arkitektur består av ett flertal mappar. Dessa är: db (database.db i), fun
 ![alttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/arkitektur.PNG)
 ## 5. (Databas med ER-diagram)
 Det här är min databas illustrerat med ett er-diagram:
-![allttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/er-diagram.PNG)
+![allttext](https://github.com/itggot-samuel-bach/slutprojektvt19webbserver/blob/master/resources/ER_DIAGRAM.PNG)
