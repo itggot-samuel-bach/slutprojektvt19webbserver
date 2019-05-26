@@ -4,18 +4,22 @@ require "sqlite3"
 require "bcrypt"
 require 'securerandom'
 require_relative 'functions/functions'
-##include Model
+include Model
 
 enable :sessions
 
-configure do
+configure do 
     set :unsecured_profile_paths, ["/profile/:id/edit"]
     set :unsecured_post_paths, ["/edit/:id", "/edit_post/:id", "/delete"]
 end
 
 
-set(:auth) do |*params|
+set(:auth) do |*args|
     condition do
+        if session["user_id"].nil?
+            session[:error] = "You are not logged in!"
+            redirect('/')
+        end
         settings.unsecured_profile_paths.each do |unsecured|
             if unsecured == request.path
                 if session["id"] != params['id'].to_i
@@ -26,8 +30,8 @@ set(:auth) do |*params|
         end
         settings.unsecured_post_paths.each do |unsecured|
             if unsecured == request.path
-                owner = post_owner(session)
-                if session["id"] != owner
+                owner = post_owner(params)
+                if session["user_id"] != owner
                     session[:error] = "You are not the owner of this post!"
                     return false
                 end
@@ -37,10 +41,9 @@ set(:auth) do |*params|
     end
 end
 
-#Loads all tags 
-#
-before() do
-    @categories = start()
+get('/tags') do
+    tags = start()
+    slim(:tags, locals: {tags: tags})
 end
 
 # Display Landing Page
@@ -134,9 +137,9 @@ get('/profile/:id/edit', auth: true) do
     result = get_profile_edit(session, params)
 
     if result.key?(:user)
-        slim(:user_edit, locals:{user: result})
+        slim(:user_edit, locals:{user: result[:user][0]})
     else
-        session[:error] = result[:error]
+        session[:error] = result[:error]    
         redirect('/')
     end
 end
@@ -150,7 +153,7 @@ end
 # @see Model#PostProfileEdit
 post('/profile/:id/edit', auth: true ) do 
     result = post_profile_edit(params)
-    if result[:error]
+    if result.key?(:error)
         session[:error] = result[:error]
     else
         redirect('/')
@@ -178,7 +181,7 @@ post('/post') do
 end
 
 post('/delete', auth: true) do
-    delete(params)
+    delete(params, session)
     redirect('/')
 end
 

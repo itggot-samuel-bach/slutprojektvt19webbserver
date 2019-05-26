@@ -1,9 +1,9 @@
-##module Model
+module Model
     def post(params, user_id)
         if validate_create_post(params)
             text = params["content"]
             db = connect_to_db()
-            username = db.execute("SELECT username FROM users WHERE id=?", [session["user_id"]])
+            username = db.execute("SELECT username FROM users WHERE id=?", user_id)
             new_file_name = SecureRandom.uuid
             
             temp_file = params["image"]["tempfile"]
@@ -119,19 +119,21 @@
             db = connect_to_db()
             db.results_as_hash = true
             hashed_password = BCrypt::Password.create(params["password"])
-            result = db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"], params["username"], hashed_password])
+            db.execute("REPLACE INTO users (id, username, password) VALUES (?, ?, ?)", [params["id"].to_i, params["username"], hashed_password])
+            return {}
         else
             return {error: "You are not logged in"}
         end
     end
 
-    def delete(params)
-        if validate_delete(params)
+    def delete(params, session)
+        if validate_delete(params, session)
             db = connect_to_db()
             db.results_as_hash = true
-            db.execute("DELETE FROM posts WHERE id = ?", params["id"])
+            db.execute("DELETE FROM posts WHERE id=?", params["id"])
+            return true
         else
-            return {error: "You are not the owner of this post!"}
+            return false
         end
     end
 
@@ -153,17 +155,17 @@
                 db.execute("UPDATE posts SET content=? WHERE id=?", [params["content"], id])
             end
         else
-            return {error: "You have not selected an image or a message or this post does not exist!"}
+            return {error: "You are not the owner of this post!"}
         end
     end
 
     def post_owner(params)
-        if validate_post_owner(session)
+        if validate_post_owner(params)
             db = connect_to_db()
             db.results_as_hash = true
             
-            result = db.execute('SELECT userId FROM posts where id=?', session["user_id"])
-            return result
+            result = db.execute('SELECT userId FROM posts where id=?', params["id"].to_i)
+            return result[0][0]
         else
             return false
         end
@@ -228,7 +230,7 @@
         params["password"] and params["id"] and params["username"]
     end
 
-    def validate_delete(params)
+    def validate_delete(params, session)
         db = connect_to_db()
         db.results_as_hash = true
 
@@ -245,12 +247,12 @@
         params["id"] and params["image"] and params["content"] 
     end
 
-    def validate_post_owner(session)
-        if session["user_id"]
+    def validate_post_owner(params)
+        if params["id"]
             return true
         else
             return false
         end
     end
-##end
+end
 

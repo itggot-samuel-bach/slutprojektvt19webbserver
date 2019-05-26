@@ -25,8 +25,4 @@ header
                 input value="Create Account" type="Submit" formaction="/create"
 
     div class="topics"
-        select name="cat"
-            - @categories.each do |category|
-                option value="#{category["id"]}" = category["name"]
-        - @categories.each do |category|
-            a href="/tags/#{category['id']}/#{category['name']}" = category["name"]
+        a href="/tags" Taglist
